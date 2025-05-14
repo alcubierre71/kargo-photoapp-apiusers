@@ -7,6 +7,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Modelo utilizado para la capa de Persistencia, con la estructura de BBDD
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
