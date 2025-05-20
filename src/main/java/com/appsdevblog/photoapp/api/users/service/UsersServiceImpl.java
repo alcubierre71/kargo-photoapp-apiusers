@@ -1,10 +1,14 @@
 package com.appsdevblog.photoapp.api.users.service;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -48,6 +52,50 @@ public class UsersServiceImpl implements UsersService {
         UserDto returnUser = modelMapper.map(userCreated, UserDto.class);
         
         return returnUser;
+        
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // TODO Auto-generated method stub
+
+        UserEntity userEntity = usersRepository.findByEmail(username);
+
+        if (userEntity == null) {
+            throw new UsernameNotFoundException(username);
+        }
+
+        // Convertimos el objeto UserEntity a UserDetails (mediante User)
+        // ----> org.springframework.security.core.userdetails.User
+        UserDetails userDetails = new User(
+                userEntity.getEmail(),
+                userEntity.getEncryptedPassword(),
+                true, // accountNonExpired
+                true, // credentialsNonExpired
+                true, // accountNonLocked
+                true, // enabled
+                new ArrayList<>() // granted authorities
+        );
+
+        return userDetails;
+
+    }
+
+    @Override
+    public UserDto getUserDetailsByEmail(String email) {
+        // TODO Auto-generated method stub
+
+        UserEntity user = usersRepository.findByEmail(email);
+
+        if (user == null) {
+            throw new UsernameNotFoundException(email);
+        }
+
+        ModelMapper modelMapper = new ModelMapper();
+        modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);  
+        UserDto userDto = modelMapper.map(user, UserDto.class);
+        
+        return userDto;
         
     }
     

@@ -1,17 +1,29 @@
 package com.appsdevblog.photoapp.api.users.security;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
 
+import javax.crypto.SecretKey;
+
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.appsdevblog.photoapp.api.users.service.UsersService;
+import com.appsdevblog.photoapp.api.users.shared.UserDto;
 import com.appsdevblog.photoapp.api.users.ui.model.LoginRequestModel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,11 +42,16 @@ import jakarta.servlet.http.HttpServletResponse;
  * 
  */
 public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
-	
+
+	private UsersService usersService;
+	private Environment env;
+
 	// Constructor
 	// AuthenticationManager: el componente central de Spring Security para validar usuarios.
-	public AuthenticationFilter(AuthenticationManager authenticationManager) {
+	public AuthenticationFilter(AuthenticationManager authenticationManager, Environment env, UsersService usersService) {
 		super(authenticationManager);
+		this.env = env;	
+		this.usersService = usersService;
 	}
 
 	// Este metodo se ejecuta automaticamente cuando el usuario intenta hacer un login 
@@ -63,10 +80,45 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 	}
 	
 	// Metodo invocado si la Autenticacion del login es exitosa 
+	// Si la autenticacion es exitosa, se genera un Token JWT 
+	// Se agrega el token y el userId asociado a la respuesta HTTP
 	@Override
 	protected void successfulAuthentication (HttpServletRequest req, HttpServletResponse res, FilterChain chain, Authentication auth) 
 			throws IOException, ServletException {
+	
+		// Se obtiene el usuario autenticado
+		User user = (User) auth.getPrincipal();			
+
+		// En la app se esta utilizando como Username el email del usuario
+		String userNameMail = user.getUsername();
+
+		UserDto userDto = usersService.getUserDetailsByEmail(userNameMail);
+		String userId = userDto.getUserId();
+
+		// Recuperamos la propiedad del token.secret del archivo application.properties
+		// Se utiliza el algoritmo HMAC SHA-256 para firmar el token
+		String tokenSecret = env.getProperty("token.secret");
+		byte[] secretKeyBytes = Base64.getEncoder().encode(tokenSecret.getBytes());
+		SecretKey secretKey = Keys.hmacShaKeyFor(secretKeyBytes);		
+
+		Instant now = Instant.now();
+		Date dateExp = Date.from(now.plusMillis(Long.parseLong(env.getProperty("token.expiration_time"))));		
+		Date dateIss = Date.from(now);
+
+		JwtBuilder tokenBuilder = Jwts.builder();	
 		
+		// Se construye el token JWT con los datos del usuario y la fecha de expiracion
+		// Se firma el token con la clave secreta
+		String tokenJwt = tokenBuilder.subject(userId)
+				.expiration(dateExp)
+				.issuedAt(dateIss)
+				.signWith(secretKey)
+				.compact();
+
+		// Se agrega el token y el userId a la respuesta HTTP
+		res.addHeader("token", tokenJwt);
+		res.addHeader("userId", userId);
+
 	}
 	
 	
