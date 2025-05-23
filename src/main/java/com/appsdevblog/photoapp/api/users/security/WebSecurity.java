@@ -52,7 +52,10 @@ public class WebSecurity {
 		http.csrf((csrf) -> csrf.disable());
 		
 		// Paths
-		AntPathRequestMatcher pathUsers = new AntPathRequestMatcher("/users", "POST");
+		AntPathRequestMatcher pathUsers = new AntPathRequestMatcher("/users/**", "GET");
+		AntPathRequestMatcher pathUsersPost = new AntPathRequestMatcher("/users/**", "POST");
+		AntPathRequestMatcher pathUsersWs = new AntPathRequestMatcher("/users-ws/**", "GET");
+		AntPathRequestMatcher pathUsersWsPost = new AntPathRequestMatcher("/users-ws/**", "POST");
 		AntPathRequestMatcher pathH2Console = new AntPathRequestMatcher("/h2-console/**");
 		
 		// Filtros
@@ -66,9 +69,15 @@ public class WebSecurity {
 		
 		// Permitir todos los accesos (no autenticar) al path H2Console
 		// Accesos al path Users unicamente permitidos desde la ip del API Gateway 
-		http.authorizeHttpRequests( (authz) -> authz.requestMatchers(pathUsers).permitAll()
+		http.authorizeHttpRequests( (authz) -> authz
+													//.anyRequest().permitAll()
+													.requestMatchers(pathUsers).permitAll()
+													.requestMatchers(pathUsersPost).permitAll()
+													.requestMatchers(pathUsersWs).permitAll()
+													.requestMatchers(pathUsersWsPost).permitAll()
 		//http.authorizeHttpRequests( (authz) -> authz.requestMatchers(pathUsers).access(webAuthApiGateway)
-													.requestMatchers(pathH2Console).permitAll() )
+													.requestMatchers(pathH2Console).permitAll() 
+													)
 				.addFilter(authFilter)
 				.authenticationManager(authenticationManager)
 				// Configurar politica de sesion como STATELESS: no se crea ni mantiene ninguna sesion en el servidor.

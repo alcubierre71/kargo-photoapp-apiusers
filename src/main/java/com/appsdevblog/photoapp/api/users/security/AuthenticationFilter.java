@@ -37,7 +37,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * 2. Usa Spring Security para verificar las credenciales.
  * 3. Si son válidas:
  *    + Busca detalles adicionales del usuario.
- *    + Genera un JWT con userId como subject.
+ *    + Genera un token JWT con userId como subject y con una clave generada con el algoritmo HMAC.
  *    + Devuelve el token en la cabecera HTTP.
  * 
  */
