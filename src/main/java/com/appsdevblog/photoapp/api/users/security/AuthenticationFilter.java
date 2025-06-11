@@ -102,7 +102,8 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 		SecretKey secretKey = Keys.hmacShaKeyFor(secretKeyBytes);		
 
 		Instant now = Instant.now();
-		Date dateExp = Date.from(now.plusMillis(Long.parseLong(env.getProperty("token.expiration_time"))));		
+		Long millisExpirationTime = Long.parseLong(env.getProperty("token.expiration_time"));
+		Date dateExp = Date.from(now.plusMillis(millisExpirationTime));		
 		Date dateIss = Date.from(now);
 
 		JwtBuilder tokenBuilder = Jwts.builder();	

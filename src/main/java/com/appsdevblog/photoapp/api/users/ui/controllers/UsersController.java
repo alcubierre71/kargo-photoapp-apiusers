@@ -33,7 +33,7 @@ public class UsersController {
 	public String status() {
 		String s = "Working: ";
 
-		return s + env.getProperty("local.server.port");
+		return s + env.getProperty("local.server.port") + ", with token = " + env.getProperty("token.secret");
 
 	}
 	
